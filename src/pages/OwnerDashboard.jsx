@@ -5,6 +5,7 @@ import { addMemberToDB, dropMemberAndTriggerWaitlist, analyzeDensityPrediction, 
 
 export default function OwnerDashboard({ onLogout, t }) {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState([]);
   const [classes, setClasses] = useState([]);
   const [densityData, setDensityData] = useState([]);
@@ -36,14 +37,19 @@ export default function OwnerDashboard({ onLogout, t }) {
     if (activeTab === 'analysis') analyzeDensityPrediction().then(data => setDensityData(data));
   }, [activeTab]);
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false); // Mobilde sekmeye tıklayınca menüyü otomatik kapat
+  };
+
   const handleAddMemberSubmit = async (e) => {
     e.preventDefault();
     try {
       await addMemberToDB(newMember);
       setNewMember({ name: '', email: '', phone: '', gender: 'male', age: '', allowNotifications: true, package: 'pack8' });
-      alert("✅ Kullanıcı Kaydedildi!");
+      alert("Kullanıcı Kaydedildi.");
     } catch (error) {
-      alert("❌ Hata! Sebep: " + error.message);
+      alert("Hata! Sebep: " + error.message);
     }
   };
 
@@ -52,51 +58,72 @@ export default function OwnerDashboard({ onLogout, t }) {
     const res = await addClassToDB(newClass);
     if(res.success) {
       setNewClass({ name: '', time: '', capacity: '' });
-      alert("✅ Ders Oluşturuldu!");
+      alert("Ders Oluşturuldu.");
     } else {
-      alert("❌ Ders Eklenemedi! Hata: " + res.message);
+      alert("Ders Eklenemedi! Hata: " + res.message);
     }
   };
 
   const handleDrop = async (classId, memberId) => {
     const res = await dropMemberAndTriggerWaitlist(classId, memberId);
-    if(res.success) alert("Üye dersten çıkarıldı (Jetonu iade edildi).");
+    if(res.success) alert("Üye dersten çıkarıldı, jetonu iade edildi.");
   };
 
   const handleAttendance = async (memberId, classId, isPresent) => {
     await markAttendance(memberId, isPresent);
     await dropMemberAndTriggerWaitlist(classId, memberId); 
-    alert(isPresent ? "Yoklama: Geldi işaretlendi." : "Yoklama: Gelmedi! Ceza puanı eklendi.");
+    alert(isPresent ? "Yoklama: Geldi olarak işaretlendi." : "Yoklama: Gelmedi olarak işaretlendi ve ceza puanı eklendi.");
   };
 
-  // MANUEL JETON KONTROLÜ (Boş gelenleri 0 olarak kabul et)
   const handleCreditChange = async (memberId, currentCredits, amount) => {
-    const safeCredits = currentCredits || 0; // Eski üyelerde null gelirse 0 say
-    const newCredits = Math.max(0, safeCredits + amount); // Jeton eksiye düşmesin
+    const safeCredits = currentCredits || 0;
+    const newCredits = Math.max(0, safeCredits + amount);
     const res = await updateMemberCredits(memberId, newCredits);
-    if(!res.success) alert("❌ Jeton güncellenemedi! Hata: " + res.message);
+    if(!res.success) alert("Jeton güncellenemedi! Hata: " + res.message);
   };
 
   const getTabClass = (tabName) => `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all w-full text-left ${activeTab === tabName ? 'bg-[#bcff00] text-[#061414]' : 'text-[#96998c] hover:text-[#bcff00] hover:bg-white/5'}`;
 
   return (
-    <div className="min-h-screen bg-[#e9ebe6] flex">
-      <aside className="w-64 bg-[#061414] text-[#e9ebe6] flex flex-col p-6 hidden md:flex">
-        <div className="flex items-center gap-3 mb-12 text-[#bcff00]"><Icons.Dumbbell /><span className="text-2xl font-black text-white">GymFlow</span></div>
+    <div className="min-h-screen bg-[#e9ebe6] flex relative overflow-hidden">
+      
+      {/* Mobil Menü Arka Plan Karartması */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
+      {/* Responsive Sidebar (Sol Menü) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#061414] text-[#e9ebe6] flex flex-col p-6 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex justify-between items-center mb-12">
+          <div className="flex items-center gap-3 text-[#bcff00]"><Icons.Dumbbell /><span className="text-2xl font-black text-white">GymFlow</span></div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-[#96998c] hover:text-white">
+            <Icons.Close />
+          </button>
+        </div>
+        
         <nav className="flex-1 space-y-2">
-          <button onClick={() => setActiveTab('dashboard')} className={getTabClass('dashboard')}><Icons.Dashboard /> {t.dashboard}</button>
-          <button onClick={() => setActiveTab('members')} className={getTabClass('members')}><Icons.Users /> {t.members}</button>
-          <button onClick={() => setActiveTab('classes')} className={getTabClass('classes')}><Icons.Calendar /> {t.classesTab}</button>
-          <button onClick={() => setActiveTab('analysis')} className={getTabClass('analysis')}><Icons.Chart /> {t.analysisTab}</button>
+          <button onClick={() => handleTabChange('dashboard')} className={getTabClass('dashboard')}><Icons.Dashboard /> {t.dashboard}</button>
+          <button onClick={() => handleTabChange('members')} className={getTabClass('members')}><Icons.Users /> {t.members}</button>
+          <button onClick={() => handleTabChange('classes')} className={getTabClass('classes')}><Icons.Calendar /> {t.classesTab}</button>
+          <button onClick={() => handleTabChange('analysis')} className={getTabClass('analysis')}><Icons.Chart /> {t.analysisTab}</button>
         </nav>
+        
         <button onClick={onLogout} className="flex items-center gap-3 text-[#96998c] hover:text-white mt-auto px-4 py-3"><Icons.Logout /> {t.logout}</button>
       </aside>
 
-      <main className="flex-1 p-8 overflow-y-auto">
-        <h1 className="text-3xl font-black text-[#061414] mb-10">{t.welcomeOwner}</h1>
+      {/* Ana İçerik Alanı */}
+      <main className="flex-1 p-4 md:p-8 h-screen overflow-y-auto w-full">
+        
+        {/* Mobil Header (Hamburger Menü Butonu) */}
+        <div className="flex justify-between items-center mb-8 md:mb-10">
+          <h1 className="text-2xl md:text-3xl font-black text-[#061414] truncate">{t.welcomeOwner}</h1>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 bg-[#061414] text-[#bcff00] rounded-xl shadow-lg">
+            <Icons.Menu />
+          </button>
+        </div>
 
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-10">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#d2d3ce]">
               <h3 className="text-4xl font-black text-[#061414]">{members.length}</h3>
               <p className="text-[#96998c] font-medium">Toplam Üye</p>
@@ -110,16 +137,16 @@ export default function OwnerDashboard({ onLogout, t }) {
 
         {activeTab === 'members' && (
           <div className="space-y-6">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#d2d3ce]">
+            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-[#d2d3ce]">
               <h3 className="text-2xl font-black mb-6">{t.addMemberTitle}</h3>
               <form onSubmit={handleAddMemberSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input type="text" placeholder={t.nameInput} value={newMember.name} onChange={e=>setNewMember({...newMember, name: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none" required/>
-                  <input type="email" placeholder={t.email} value={newMember.email} onChange={e=>setNewMember({...newMember, email: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none" required/>
-                  <input type="text" placeholder={t.phoneInput} value={newMember.phone} onChange={e=>setNewMember({...newMember, phone: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none" required/>
-                  <input type="number" placeholder={t.age} value={newMember.age} onChange={e=>setNewMember({...newMember, age: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none" required min="10" max="100"/>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <input type="text" placeholder={t.nameInput} value={newMember.name} onChange={e=>setNewMember({...newMember, name: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none w-full" required/>
+                  <input type="email" placeholder={t.email} value={newMember.email} onChange={e=>setNewMember({...newMember, email: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none w-full" required/>
+                  <input type="text" placeholder={t.phoneInput} value={newMember.phone} onChange={e=>setNewMember({...newMember, phone: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none w-full" required/>
+                  <input type="number" placeholder={t.age} value={newMember.age} onChange={e=>setNewMember({...newMember, age: e.target.value})} className="border border-[#d2d3ce] p-4 rounded-2xl focus:ring-2 focus:ring-[#bcff00] outline-none w-full" required min="10" max="100"/>
                   
-                  <div className="flex items-center gap-4 p-4 border border-[#d2d3ce] rounded-2xl">
+                  <div className="flex flex-wrap items-center gap-4 p-4 border border-[#d2d3ce] rounded-2xl">
                     <span className="font-bold text-[#061414]">{t.gender}:</span>
                     <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="gender" value="male" checked={newMember.gender === 'male'} onChange={e=>setNewMember({...newMember, gender: e.target.value})} className="accent-[#061414]" /> {t.male}</label>
                     <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="gender" value="female" checked={newMember.gender === 'female'} onChange={e=>setNewMember({...newMember, gender: e.target.value})} className="accent-[#061414]" /> {t.female}</label>
@@ -127,7 +154,7 @@ export default function OwnerDashboard({ onLogout, t }) {
 
                   <div className="flex flex-col gap-2 p-4 border border-[#d2d3ce] rounded-2xl">
                     <span className="font-bold text-[#061414]">{t.package}:</span>
-                    <select value={newMember.package} onChange={e=>setNewMember({...newMember, package: e.target.value})} className="border border-[#d2d3ce] p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#bcff00] bg-white">
+                    <select value={newMember.package} onChange={e=>setNewMember({...newMember, package: e.target.value})} className="border border-[#d2d3ce] p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#bcff00] bg-white w-full">
                       <option value="pack8">{t.pack8}</option>
                       <option value="pack16">{t.pack16}</option>
                       <option value="pack24">{t.pack24}</option>
@@ -144,24 +171,22 @@ export default function OwnerDashboard({ onLogout, t }) {
               </form>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#d2d3ce]">
+            <div className="bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-[#d2d3ce] overflow-x-auto">
                <h3 className="text-xl font-black mb-4">Üye Listesi</h3>
                {members.map(m => (
                  <div key={m.id} className="border-b border-[#d2d3ce] py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                   <div>
-                     <div className="font-bold text-lg">{m.name} <span className="text-sm text-[#96998c] font-medium block">{m.email} • {m.age || '-'} Yaş • {m.phone}</span></div>
+                   <div className="w-full md:w-auto">
+                     <div className="font-bold text-lg">{m.name} <span className="text-sm text-[#96998c] font-medium block mt-1">{m.email} • {m.age || '-'} Yaş • {m.phone}</span></div>
                      
                      <div className="flex items-center gap-3 mt-3">
-                       {/* Boş ise 0 gösterir */}
-                       <span className="bg-[#f8f9f7] text-[#061414] px-3 py-1.5 rounded-lg text-sm font-black border border-[#d2d3ce]">🪙 {m.credits || 0} Jeton</span>
+                       <span className="bg-[#f8f9f7] text-[#061414] px-3 py-1.5 rounded-lg text-sm font-black border border-[#d2d3ce]">{m.credits || 0} Jeton</span>
                        <div className="flex items-center gap-1 bg-[#e9ebe6] p-1 rounded-lg">
                          <button onClick={() => handleCreditChange(m.id, m.credits, -1)} className="bg-white text-red-600 w-8 h-8 rounded-md font-black flex items-center justify-center hover:bg-red-100 transition-colors shadow-sm">-</button>
                          <button onClick={() => handleCreditChange(m.id, m.credits, 1)} className="bg-white text-green-600 w-8 h-8 rounded-md font-black flex items-center justify-center hover:bg-green-100 transition-colors shadow-sm">+</button>
                        </div>
                      </div>
-
                    </div>
-                   <span className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide ${m.status === 'suspended' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                   <span className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap ${m.status === 'suspended' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                      {m.status === 'suspended' ? 'ASKIYA ALINDI' : `AKTİF (Ceza: ${m.absentCount || 0})`}
                    </span>
                  </div>
@@ -175,35 +200,35 @@ export default function OwnerDashboard({ onLogout, t }) {
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#d2d3ce]">
               <h3 className="text-xl font-black mb-4">Yeni Ders Ekle</h3>
               <form onSubmit={handleAddClassSubmit} className="flex flex-col md:flex-row gap-4">
-                <input type="text" placeholder="Ders Adı" value={newClass.name} onChange={e=>setNewClass({...newClass, name: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl flex-1 focus:ring-2 focus:ring-[#bcff00]" required/>
-                <input type="time" value={newClass.time} onChange={e=>setNewClass({...newClass, time: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl flex-1 focus:ring-2 focus:ring-[#bcff00]" required/>
-                <input type="number" placeholder="Kontenjan" value={newClass.capacity} onChange={e=>setNewClass({...newClass, capacity: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl flex-1 focus:ring-2 focus:ring-[#bcff00]" required min="1"/>
-                <button type="submit" className="bg-[#061414] text-[#bcff00] px-6 py-3 rounded-xl font-bold">Dersi Oluştur</button>
+                <input type="text" placeholder="Ders Adı" value={newClass.name} onChange={e=>setNewClass({...newClass, name: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl w-full md:flex-1 focus:ring-2 focus:ring-[#bcff00]" required/>
+                <input type="time" value={newClass.time} onChange={e=>setNewClass({...newClass, time: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl w-full md:flex-1 focus:ring-2 focus:ring-[#bcff00]" required/>
+                <input type="number" placeholder="Kontenjan" value={newClass.capacity} onChange={e=>setNewClass({...newClass, capacity: e.target.value})} className="border border-[#d2d3ce] p-3 rounded-xl w-full md:flex-1 focus:ring-2 focus:ring-[#bcff00]" required min="1"/>
+                <button type="submit" className="bg-[#061414] text-[#bcff00] px-6 py-3 rounded-xl font-bold w-full md:w-auto">Dersi Oluştur</button>
               </form>
             </div>
 
             <h2 className="text-2xl font-black mb-4 mt-8">{t.classesTitle}</h2>
             {classes.map(cls => (
-              <div key={cls.id} className="bg-white p-6 rounded-3xl border border-[#d2d3ce] flex flex-col md:flex-row gap-6 shadow-sm">
+              <div key={cls.id} className="bg-white p-4 md:p-6 rounded-3xl border border-[#d2d3ce] flex flex-col md:flex-row gap-6 shadow-sm">
                 <div className="flex-1">
                   <h3 className="text-xl font-black">{cls.name} <span className="text-sm text-[#96998c]">({cls.time})</span></h3>
                   <div className="mt-4 space-y-2">
                     {(cls.enrolled || []).map(memberId => {
                       const m = members.find(x => x.id === memberId) || { name: memberId };
                       return (
-                        <div key={memberId} className="flex items-center justify-between bg-[#e9ebe6] px-4 py-3 rounded-xl">
+                        <div key={memberId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#e9ebe6] px-4 py-3 rounded-xl">
                           <span className="font-bold">{m.name}</span>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button onClick={() => handleAttendance(memberId, cls.id, true)} className="bg-green-100 text-green-700 px-3 py-1 rounded font-bold text-sm">Geldi</button>
                             <button onClick={() => handleAttendance(memberId, cls.id, false)} className="bg-red-100 text-red-700 px-3 py-1 rounded font-bold text-sm">Gelmedi</button>
-                            <button onClick={() => handleDrop(cls.id, memberId)} className="text-red-500 ml-2 text-sm underline font-bold">Çıkar</button>
+                            <button onClick={() => handleDrop(cls.id, memberId)} className="text-red-500 sm:ml-2 text-sm underline font-bold">Çıkar</button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-                <div className="bg-[#061414] p-4 rounded-2xl w-full md:w-1/3 border border-[#bcff00]/30">
+                <div className="bg-[#061414] p-4 rounded-2xl w-full md:w-1/3 border border-[#bcff00]/30 h-fit">
                   <h4 className="font-bold text-[#bcff00] mb-3">{t.waitlist} ({(cls.waitlist || []).length})</h4>
                   {(cls.waitlist || []).map(wId => {
                     const m = members.find(x => x.id === wId) || { name: wId };
@@ -216,14 +241,14 @@ export default function OwnerDashboard({ onLogout, t }) {
         )}
 
         {activeTab === 'analysis' && (
-           <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#d2d3ce]">
+           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-[#d2d3ce] overflow-x-auto">
              <h2 className="text-2xl font-black mb-2">{t.densityTitle}</h2>
              <p className="text-[#96998c] mb-10">{t.densityDesc}</p>
-             <div className="flex items-end gap-2 h-64 mt-8">
+             <div className="flex items-end gap-2 h-64 mt-8 min-w-[500px]">
                {densityData.map(d => (
-                 <div key={d.time} className="flex flex-col items-center flex-1 group">
+                 <div key={d.time} className="flex flex-col items-center flex-1 group relative">
                    <div className={`w-full rounded-t-xl transition-all ${d.density > 80 ? 'bg-red-500' : d.density > 50 ? 'bg-orange-400' : 'bg-[#bcff00]'}`} style={{ height: `${d.density}%` }}>
-                     <span className="opacity-0 group-hover:opacity-100 absolute -mt-8 bg-[#061414] text-white text-xs px-2 py-1 rounded font-bold">%{d.density}</span>
+                     <span className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-[#061414] text-white text-xs px-2 py-1 rounded font-bold">%{d.density}</span>
                    </div>
                    <span className="text-xs font-bold mt-2 text-[#96998c]">{d.time}</span>
                  </div>
