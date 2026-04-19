@@ -192,3 +192,30 @@ export const updateMemberCredits = async (memberId, newCredits) => {
     return { success: false, message: error.message };
   }
 };
+
+// 9. DERSİ SİL VE KAYITLILARA JETON İADE ET
+export const deleteClassAndRefund = async (classId) => {
+  try {
+    // Önce dersi bul
+    const { data: cls } = await supabase.from('classes').select('enrolled').eq('id', classId).single();
+    
+    // Eğer derse kayıtlı birileri varsa, jetonlarını geri ver
+    if (cls && cls.enrolled && cls.enrolled.length > 0) {
+      for (const memberId of cls.enrolled) {
+        const { data: member } = await supabase.from('members').select('credits').eq('id', memberId).single();
+        if (member) {
+          await supabase.from('members').update({ credits: member.credits + 1 }).eq('id', memberId);
+        }
+      }
+    }
+
+    // Dersi tamamen sil
+    const { error } = await supabase.from('classes').delete().eq('id', classId);
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error("Silme hatası:", error);
+    return { success: false, message: error.message };
+  }
+};
