@@ -112,9 +112,8 @@ export const dropMemberAndTriggerWaitlist = async (classId, memberIdToDrop) => {
         read: false
       }]);
     }
-    return { success: true, message: "İptal/Çıkarma işlemi başarılı." };
+    return { success: true, message: "İşlem başarılı." };
   } catch (error) {
-    console.error(error);
     return { success: false, message: "İşlem başarısız oldu." };
   }
 };
@@ -175,10 +174,7 @@ export const analyzeDensityPrediction = async () => {
     ];
     return historicalData.map(data => {
       const densityPercent = Math.round((data.avgCount / data.maxCapacity) * 100);
-      let category = 'Sakin';
-      if(densityPercent > 80) category = 'Çok Yoğun';
-      else if(densityPercent > 50) category = 'Normal';
-      return { time: data.time, density: densityPercent, category: category };
+      return { time: data.time, density: densityPercent };
     });
 };
 
@@ -196,10 +192,7 @@ export const updateMemberCredits = async (memberId, newCredits) => {
 // 9. DERSİ SİL VE KAYITLILARA JETON İADE ET
 export const deleteClassAndRefund = async (classId) => {
   try {
-    // Önce dersi bul
     const { data: cls } = await supabase.from('classes').select('enrolled').eq('id', classId).single();
-    
-    // Eğer derse kayıtlı birileri varsa, jetonlarını geri ver
     if (cls && cls.enrolled && cls.enrolled.length > 0) {
       for (const memberId of cls.enrolled) {
         const { data: member } = await supabase.from('members').select('credits').eq('id', memberId).single();
@@ -208,47 +201,32 @@ export const deleteClassAndRefund = async (classId) => {
         }
       }
     }
-
-    // Dersi tamamen sil
     const { error } = await supabase.from('classes').delete().eq('id', classId);
     if (error) throw error;
-
     return { success: true };
   } catch (error) {
-    console.error("Silme hatası:", error);
     return { success: false, message: error.message };
   }
 };
+
 // 10. ÜYEYİ SİL VE DERS LİSTELERİNDEN TEMİZLE
 export const deleteMemberFromDB = async (memberId) => {
   try {
-    // 1. Önce tüm dersleri kontrol et ve bu üyeyi listelerden çıkar
     const { data: classes } = await supabase.from('classes').select('*');
-    
-    for (const cls of classes) {
-      const updatedEnrolled = (cls.enrolled || []).filter(id => id !== memberId);
-      const updatedWaitlist = (cls.waitlist || []).filter(id => id !== memberId);
-      
-      // Eğer üye bu dersteyse listeyi güncelle
-      if (updatedEnrolled.length !== (cls.enrolled || []).length || 
-          updatedWaitlist.length !== (cls.waitlist || []).length) {
-        await supabase.from('classes').update({ 
-          enrolled: updatedEnrolled, 
-          waitlist: updatedWaitlist 
-        }).eq('id', cls.id);
+    if (classes) {
+      for (const cls of classes) {
+        const updatedEnrolled = (cls.enrolled || []).filter(id => id !== memberId);
+        const updatedWaitlist = (cls.waitlist || []).filter(id => id !== memberId);
+        if (updatedEnrolled.length !== (cls.enrolled || []).length || updatedWaitlist.length !== (cls.waitlist || []).length) {
+          await supabase.from('classes').update({ enrolled: updatedEnrolled, waitlist: updatedWaitlist }).eq('id', cls.id);
+        }
       }
     }
-
-    // 2. Üyeye ait bildirimleri sil (Foreign Key hatası almamak için)
     await supabase.from('notifications').delete().eq('memberId', memberId);
-
-    // 3. Üyeyi ana tablodan sil
     const { error } = await supabase.from('members').delete().eq('id', memberId);
-    
     if (error) throw error;
     return { success: true };
   } catch (error) {
-    console.error("Uye silme hatasi:", error);
     return { success: false, message: error.message };
   }
 };
