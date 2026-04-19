@@ -41,37 +41,37 @@ export default function MemberDashboard({ memberId, onLogout, t }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#e9ebe6] flex flex-col p-4 md:p-8 items-center">
-      <div className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-xl border border-[#d2d3ce] overflow-hidden pb-8">
+    <div className="min-h-screen bg-[#e9ebe6] flex flex-col p-2 sm:p-4 md:p-8 items-center">
+      <div className="w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border border-[#d2d3ce] overflow-hidden pb-8">
         
-        <div className="bg-[#061414] p-8 pb-16 relative">
+        <div className="bg-[#061414] p-6 sm:p-8 pb-16 relative">
           <div className="flex justify-between items-center relative z-10">
             <span className="text-[#bcff00] font-black text-xl flex items-center gap-2"><Icons.Dumbbell /> GymFlow</span>
             <button onClick={onLogout} className="text-[#96998c] hover:text-white transition-colors"><Icons.Logout /></button>
           </div>
         </div>
 
-        <div className="px-8 relative -mt-10">
+        <div className="px-4 sm:px-8 relative -mt-10">
           <div className="flex justify-between items-end">
-            <div className="w-20 h-20 bg-[#e9ebe6] border-4 border-white rounded-2xl flex items-center justify-center text-[#061414] shadow-md">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#e9ebe6] border-4 border-white rounded-2xl flex items-center justify-center text-[#061414] shadow-md">
               <Icons.User />
             </div>
             
-            <div className="bg-[#bcff00] text-[#061414] px-4 py-2 rounded-2xl border-4 border-white shadow-md flex items-center gap-2 font-black text-lg">
-              🪙 {member?.credits || 0} Jeton
+            <div className="bg-[#bcff00] text-[#061414] px-4 py-2 rounded-2xl border-4 border-white shadow-md flex items-center gap-2 font-black text-sm sm:text-lg">
+              {member?.credits || 0} Jeton
             </div>
           </div>
           
-          <h2 className="text-3xl font-black text-[#061414] mt-4">{member?.name || 'Yükleniyor...'}</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#061414] mt-4">{member?.name || 'Yükleniyor...'}</h2>
           
           {member?.status === 'suspended' && (
-            <div className="mt-4 bg-red-100 border border-red-500 text-red-700 p-4 rounded-2xl font-bold">
+            <div className="mt-4 bg-red-100 border border-red-500 text-red-700 p-4 rounded-2xl font-bold text-sm sm:text-base">
               {t.suspendedMsg}
             </div>
           )}
 
           {member?.credits <= 0 && (
-            <div className="mt-4 bg-orange-100 border border-orange-400 text-orange-800 p-4 rounded-2xl font-bold">
+            <div className="mt-4 bg-orange-100 border border-orange-400 text-orange-800 p-4 rounded-2xl font-bold text-sm sm:text-base">
               {t.noCreditsMsg}
             </div>
           )}
@@ -88,21 +88,21 @@ export default function MemberDashboard({ memberId, onLogout, t }) {
                 const outOfCredits = member?.credits <= 0;
 
                 return (
-                  <div key={cls.id} className="border border-[#d2d3ce] p-4 rounded-2xl flex justify-between items-center bg-[#f8f9f7]">
+                  <div key={cls.id} className="border border-[#d2d3ce] p-4 rounded-2xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-[#f8f9f7]">
                     <div>
                       <p className="font-black text-[#061414] text-lg">{cls.name}</p>
                       <p className="text-sm text-[#96998c] font-medium">Saat: {cls.time} • Kontenjan: {enrolled.length}/{cls.capacity}</p>
                     </div>
-                    <div>
+                    <div className="w-full sm:w-auto flex">
                       {(isEnrolled || isWaitlisted) ? (
-                        <button onClick={() => handleCancel(cls.id, cls.time)} className="bg-[#061414] text-white px-4 py-2 rounded-xl font-bold hover:bg-black transition-all">
+                        <button onClick={() => handleCancel(cls.id, cls.time)} className="w-full sm:w-auto bg-[#061414] text-white px-4 py-2 rounded-xl font-bold hover:bg-black transition-all">
                           {t.cancelClass}
                         </button>
                       ) : (
                         <button 
                           onClick={() => handleEnroll(cls.id)} 
                           disabled={member?.status === 'suspended' || outOfCredits}
-                          className={`px-4 py-2 rounded-xl font-bold transition-all ${(member?.status === 'suspended' || outOfCredits) ? 'bg-[#d2d3ce] text-[#96998c] cursor-not-allowed' : 'bg-[#bcff00] text-[#061414] hover:-translate-y-1 shadow-md shadow-[#bcff00]/20'}`}
+                          className={`w-full sm:w-auto px-4 py-2 rounded-xl font-bold transition-all ${(member?.status === 'suspended' || outOfCredits) ? 'bg-[#d2d3ce] text-[#96998c] cursor-not-allowed' : 'bg-[#bcff00] text-[#061414] hover:-translate-y-1 shadow-md shadow-[#bcff00]/20'}`}
                         >
                           {isFull ? t.joinWaitlist : t.joinClass}
                         </button>
@@ -115,12 +115,12 @@ export default function MemberDashboard({ memberId, onLogout, t }) {
           </div>
           
           <div className="mt-10 border-t border-[#d2d3ce] pt-6">
-            <h4 className="font-bold text-[#061414] mb-2 flex items-center gap-2"><Icons.Bell /> Bildirimler</h4>
+            <h4 className="font-bold text-[#061414] mb-4 flex items-center gap-2"><Icons.Bell /> Bildirimler</h4>
             {notifications.length === 0 ? <p className="text-sm text-[#96998c]">Bildiriminiz yok.</p> : (
               notifications.map(n => (
-                <div key={n.id} className="bg-[#bcff00]/20 border border-[#bcff00] p-4 rounded-2xl mb-2">
+                <div key={n.id} className="bg-[#bcff00]/20 border border-[#bcff00] p-4 rounded-2xl mb-3">
                   <p className="text-sm font-bold text-[#061414]">{n.message}</p>
-                  <span className="text-xs text-[#96998c]">{n.date}</span>
+                  <span className="text-xs text-[#96998c] mt-1 block">{n.date}</span>
                 </div>
               ))
             )}
