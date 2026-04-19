@@ -8,25 +8,20 @@ import { translations } from './data/translations';
 
 function App() {
   const [lang, setLang] = useState('tr');
-  const [view, setView] = useState('landing');
-  const [memberId, setMemberId] = useState(null);
+  
+  // BURASI KRİTİK: State'i doğrudan localStorage'dan başlatıyoruz
+  const [view, setView] = useState(() => {
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole === 'owner') return 'ownerDashboard';
+    if (savedRole === 'member') return 'memberDashboard';
+    return 'landing';
+  });
+
+  const [memberId, setMemberId] = useState(() => {
+    return localStorage.getItem('memberId') || null;
+  });
 
   const t = translations[lang];
-
-  // SAYFA YÜKLENDİĞİNDE OTURUMU KONTROL ET (F5 Çözümü)
-useEffect(() => {
-    // Tarayıcı hafızasını oku
-    const savedRole = localStorage.getItem('userRole');
-    const savedMemberId = localStorage.getItem('memberId');
-
-    // Eğer veri varsa görünümü güncelle
-    if (savedRole === 'owner') {
-      setView('ownerDashboard');
-    } else if (savedRole === 'member' && savedMemberId) {
-      setMemberId(savedMemberId);
-      setView('memberDashboard');
-    }
-  }, []); // <--- Burası mutlaka boş bir dizi olmalı!
 
   // YÖNETİCİ GİRİŞ YAPTIĞINDA
   const handleOwnerLogin = () => {
@@ -42,7 +37,7 @@ useEffect(() => {
     setView('memberDashboard');
   };
 
-  // ÇIKIŞ YAPTIĞINDA (Hafızayı Temizle)
+  // ÇIKIŞ YAPTIĞINDA
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('memberId');
