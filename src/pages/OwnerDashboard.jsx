@@ -17,18 +17,20 @@ export default function OwnerDashboard({ onLogout, t }) {
   
   const [newClass, setNewClass] = useState({ name: '', time: '', capacity: '' });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: membersData } = await supabase.from('members').select('*');
-      if (membersData) setMembers(membersData);
-      
-      const { data: classesData } = await supabase.from('classes').select('*');
-      if (classesData) setClasses(classesData);
-    };
-    fetchData();
+  // Verileri çekme fonksiyonunu dışarı aldık ki butonlara basınca da çağırabilelim
+  const loadData = async () => {
+    const { data: membersData } = await supabase.from('members').select('*');
+    if (membersData) setMembers(membersData);
+    
+    const { data: classesData } = await supabase.from('classes').select('*');
+    if (classesData) setClasses(classesData);
+  };
 
-    const memberSub = supabase.channel('members-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, fetchData).subscribe();
-    const classesSub = supabase.channel('classes-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, fetchData).subscribe();
+  useEffect(() => {
+    loadData();
+
+    const memberSub = supabase.channel('members-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, loadData).subscribe();
+    const classesSub = supabase.channel('classes-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, loadData).subscribe();
 
     return () => { supabase.removeChannel(memberSub); supabase.removeChannel(classesSub); };
   }, []);
@@ -39,7 +41,7 @@ export default function OwnerDashboard({ onLogout, t }) {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setIsMobileMenuOpen(false); // Mobilde sekmeye tıklayınca menüyü otomatik kapat
+    setIsMobileMenuOpen(false);
   };
 
   const handleAddMemberSubmit = async (e) => {
@@ -47,6 +49,7 @@ export default function OwnerDashboard({ onLogout, t }) {
     try {
       await addMemberToDB(newMember);
       setNewMember({ name: '', email: '', phone: '', gender: 'male', age: '', allowNotifications: true, package: 'pack8' });
+      await loadData(); // EKRANI ANINDA YENİLE
       alert("Kullanıcı Kaydedildi.");
     } catch (error) {
       alert("Hata! Sebep: " + error.message);
@@ -58,6 +61,7 @@ export default function OwnerDashboard({ onLogout, t }) {
     const res = await addClassToDB(newClass);
     if(res.success) {
       setNewClass({ name: '', time: '', capacity: '' });
+      await loadData(); // EKRANI ANINDA YENİLE
       alert("Ders Oluşturuldu.");
     } else {
       alert("Ders Eklenemedi! Hata: " + res.message);
@@ -66,20 +70,33 @@ export default function OwnerDashboard({ onLogout, t }) {
 
   const handleDrop = async (classId, memberId) => {
     const res = await dropMemberAndTriggerWaitlist(classId, memberId);
-    if(res.success) alert("Üye dersten çıkarıldı, jetonu iade edildi.");
+    if(res.success) {
+      await loadData(); // EKRANI ANINDA YENİLE
+      alert("Üye dersten çıkarıldı, jetonu iade edildi.");
+    }
   };
 
   const handleAttendance = async (memberId, classId, isPresent) => {
     await markAttendance(memberId, isPresent);
     await dropMemberAndTriggerWaitlist(classId, memberId); 
+    await loadData(); // EKRANI ANINDA YENİLE
     alert(isPresent ? "Yoklama: Geldi olarak işaretlendi." : "Yoklama: Gelmedi olarak işaretlendi ve ceza puanı eklendi.");
   };
 
+  // JETON BUTONLARI İÇİN ÖZEL ÇÖZÜM (Ekranda anında değişir)
   const handleCreditChange = async (memberId, currentCredits, amount) => {
     const safeCredits = currentCredits || 0;
     const newCredits = Math.max(0, safeCredits + amount);
+    
+    // 1. Önce kullanıcının ekranında jetonu anında değiştir (Bekletmeden)
+    setMembers(members.map(m => m.id === memberId ? { ...m, credits: newCredits } : m));
+    
+    // 2. Arka planda veritabanına kaydet
     const res = await updateMemberCredits(memberId, newCredits);
-    if(!res.success) alert("Jeton güncellenemedi! Hata: " + res.message);
+    if(!res.success) {
+      alert("Jeton güncellenemedi! Hata: " + res.message);
+      loadData(); // Hata olursa eski haline geri döndür
+    }
   };
 
   const getTabClass = (tabName) => `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all w-full text-left ${activeTab === tabName ? 'bg-[#bcff00] text-[#061414]' : 'text-[#96998c] hover:text-[#bcff00] hover:bg-white/5'}`;
@@ -87,12 +104,10 @@ export default function OwnerDashboard({ onLogout, t }) {
   return (
     <div className="min-h-screen bg-[#e9ebe6] flex relative overflow-hidden">
       
-      {/* Mobil Menü Arka Plan Karartması */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
 
-      {/* Responsive Sidebar (Sol Menü) */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#061414] text-[#e9ebe6] flex flex-col p-6 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-3 text-[#bcff00]"><Icons.Dumbbell /><span className="text-2xl font-black text-white">GymFlow</span></div>
@@ -111,10 +126,8 @@ export default function OwnerDashboard({ onLogout, t }) {
         <button onClick={onLogout} className="flex items-center gap-3 text-[#96998c] hover:text-white mt-auto px-4 py-3"><Icons.Logout /> {t.logout}</button>
       </aside>
 
-      {/* Ana İçerik Alanı */}
       <main className="flex-1 p-4 md:p-8 h-screen overflow-y-auto w-full">
         
-        {/* Mobil Header (Hamburger Menü Butonu) */}
         <div className="flex justify-between items-center mb-8 md:mb-10">
           <h1 className="text-2xl md:text-3xl font-black text-[#061414] truncate">{t.welcomeOwner}</h1>
           <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 bg-[#061414] text-[#bcff00] rounded-xl shadow-lg">
