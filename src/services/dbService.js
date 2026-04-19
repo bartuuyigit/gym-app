@@ -219,3 +219,36 @@ export const deleteClassAndRefund = async (classId) => {
     return { success: false, message: error.message };
   }
 };
+// 10. ÜYEYİ SİL VE DERS LİSTELERİNDEN TEMİZLE
+export const deleteMemberFromDB = async (memberId) => {
+  try {
+    // 1. Önce tüm dersleri kontrol et ve bu üyeyi listelerden çıkar
+    const { data: classes } = await supabase.from('classes').select('*');
+    
+    for (const cls of classes) {
+      const updatedEnrolled = (cls.enrolled || []).filter(id => id !== memberId);
+      const updatedWaitlist = (cls.waitlist || []).filter(id => id !== memberId);
+      
+      // Eğer üye bu dersteyse listeyi güncelle
+      if (updatedEnrolled.length !== (cls.enrolled || []).length || 
+          updatedWaitlist.length !== (cls.waitlist || []).length) {
+        await supabase.from('classes').update({ 
+          enrolled: updatedEnrolled, 
+          waitlist: updatedWaitlist 
+        }).eq('id', cls.id);
+      }
+    }
+
+    // 2. Üyeye ait bildirimleri sil (Foreign Key hatası almamak için)
+    await supabase.from('notifications').delete().eq('memberId', memberId);
+
+    // 3. Üyeyi ana tablodan sil
+    const { error } = await supabase.from('members').delete().eq('id', memberId);
+    
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("Uye silme hatasi:", error);
+    return { success: false, message: error.message };
+  }
+};
