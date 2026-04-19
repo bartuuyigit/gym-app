@@ -14,17 +14,19 @@ function App() {
   const t = translations[lang];
 
   // SAYFA YÜKLENDİĞİNDE OTURUMU KONTROL ET (F5 Çözümü)
-  useEffect(() => {
+useEffect(() => {
+    // Tarayıcı hafızasını oku
     const savedRole = localStorage.getItem('userRole');
     const savedMemberId = localStorage.getItem('memberId');
 
+    // Eğer veri varsa görünümü güncelle
     if (savedRole === 'owner') {
       setView('ownerDashboard');
     } else if (savedRole === 'member' && savedMemberId) {
       setMemberId(savedMemberId);
       setView('memberDashboard');
     }
-  }, []);
+  }, []); // <--- Burası mutlaka boş bir dizi olmalı!
 
   // YÖNETİCİ GİRİŞ YAPTIĞINDA
   const handleOwnerLogin = () => {
