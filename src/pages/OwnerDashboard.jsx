@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Icons from '../components/Icons';
 import { supabase } from '../config/supabase';
-import { addMemberToDB, dropMemberAndTriggerWaitlist, analyzeDensityPrediction, markAttendance, addClassToDB, updateMemberCredits } from '../services/dbService';
+import { addMemberToDB, dropMemberAndTriggerWaitlist, analyzeDensityPrediction, markAttendance, addClassToDB, updateMemberCredits, deleteClassAndRefund } from '../services/dbService';
 
 export default function OwnerDashboard({ onLogout, t }) {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -17,7 +17,6 @@ export default function OwnerDashboard({ onLogout, t }) {
   
   const [newClass, setNewClass] = useState({ name: '', time: '', capacity: '' });
 
-  // Verileri çekme fonksiyonunu dışarı aldık ki butonlara basınca da çağırabilelim
   const loadData = async () => {
     const { data: membersData } = await supabase.from('members').select('*');
     if (membersData) setMembers(membersData);
@@ -49,7 +48,7 @@ export default function OwnerDashboard({ onLogout, t }) {
     try {
       await addMemberToDB(newMember);
       setNewMember({ name: '', email: '', phone: '', gender: 'male', age: '', allowNotifications: true, package: 'pack8' });
-      await loadData(); // EKRANI ANINDA YENİLE
+      await loadData(); 
       alert("Kullanıcı Kaydedildi.");
     } catch (error) {
       alert("Hata! Sebep: " + error.message);
@@ -61,7 +60,7 @@ export default function OwnerDashboard({ onLogout, t }) {
     const res = await addClassToDB(newClass);
     if(res.success) {
       setNewClass({ name: '', time: '', capacity: '' });
-      await loadData(); // EKRANI ANINDA YENİLE
+      await loadData(); 
       alert("Ders Oluşturuldu.");
     } else {
       alert("Ders Eklenemedi! Hata: " + res.message);
@@ -71,7 +70,7 @@ export default function OwnerDashboard({ onLogout, t }) {
   const handleDrop = async (classId, memberId) => {
     const res = await dropMemberAndTriggerWaitlist(classId, memberId);
     if(res.success) {
-      await loadData(); // EKRANI ANINDA YENİLE
+      await loadData(); 
       alert("Üye dersten çıkarıldı, jetonu iade edildi.");
     }
   };
@@ -79,23 +78,32 @@ export default function OwnerDashboard({ onLogout, t }) {
   const handleAttendance = async (memberId, classId, isPresent) => {
     await markAttendance(memberId, isPresent);
     await dropMemberAndTriggerWaitlist(classId, memberId); 
-    await loadData(); // EKRANI ANINDA YENİLE
+    await loadData(); 
     alert(isPresent ? "Yoklama: Geldi olarak işaretlendi." : "Yoklama: Gelmedi olarak işaretlendi ve ceza puanı eklendi.");
   };
 
-  // JETON BUTONLARI İÇİN ÖZEL ÇÖZÜM (Ekranda anında değişir)
   const handleCreditChange = async (memberId, currentCredits, amount) => {
     const safeCredits = currentCredits || 0;
     const newCredits = Math.max(0, safeCredits + amount);
-    
-    // 1. Önce kullanıcının ekranında jetonu anında değiştir (Bekletmeden)
     setMembers(members.map(m => m.id === memberId ? { ...m, credits: newCredits } : m));
     
-    // 2. Arka planda veritabanına kaydet
     const res = await updateMemberCredits(memberId, newCredits);
     if(!res.success) {
       alert("Jeton güncellenemedi! Hata: " + res.message);
-      loadData(); // Hata olursa eski haline geri döndür
+      loadData(); 
+    }
+  };
+
+  // YENİ EKLENEN: DERSİ SİLME İŞLEMİ
+  const handleDeleteClass = async (classId) => {
+    if (window.confirm("Bu dersi silmek istediğinize emin misiniz? Derse kayıtlı üyelerin jetonları otomatik iade edilecektir.")) {
+      const res = await deleteClassAndRefund(classId);
+      if (res.success) {
+        await loadData(); // Ekranı anında güncelle
+        alert("Ders başarıyla silindi.");
+      } else {
+        alert("Ders silinemedi! Hata: " + res.message);
+      }
     }
   };
 
@@ -224,8 +232,20 @@ export default function OwnerDashboard({ onLogout, t }) {
             {classes.map(cls => (
               <div key={cls.id} className="bg-white p-4 md:p-6 rounded-3xl border border-[#d2d3ce] flex flex-col md:flex-row gap-6 shadow-sm">
                 <div className="flex-1">
-                  <h3 className="text-xl font-black">{cls.name} <span className="text-sm text-[#96998c]">({cls.time})</span></h3>
-                  <div className="mt-4 space-y-2">
+                  
+                  {/* SİL BUTONU BURAYA EKLENDİ */}
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-black">{cls.name} <span className="text-sm text-[#96998c]">({cls.time})</span></h3>
+                    <button 
+                      onClick={() => handleDeleteClass(cls.id)} 
+                      className="bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200 transition-colors"
+                      title="Dersi Sil"
+                    >
+                      <Icons.Trash />
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2">
                     {(cls.enrolled || []).map(memberId => {
                       const m = members.find(x => x.id === memberId) || { name: memberId };
                       return (
