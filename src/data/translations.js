@@ -1,5 +1,6 @@
 export const translations = {
   tr: {
+    // Giriş ve Karşılama
     gymflowDesc: 'Modern Spor Salonu Yönetimi',
     owner: 'Yönetici',
     ownerDesc: 'Salonunu yönet, üyeleri takip et ve istatistikleri gör.',
@@ -12,15 +13,17 @@ export const translations = {
     email: 'E-posta',
     password: 'Şifre',
     loginBtn: 'Giriş Yap',
-    goBack: '← Geri Dön',
-    selectAccount: 'Hesabınızı Seçin',
-    selectMember: 'Üye Seçin...',
-    goToPanel: 'Panele Git',
+    goBack: 'Geri Dön',
+    logout: 'Çıkış Yap',
     welcomeOwner: 'Hoş Geldin, Yönetici',
-    dashboard: 'Dashboard',
+
+    // Dashboard Sekmeleri
+    dashboard: 'Panel',
     members: 'Üyeler',
     classesTab: 'Dersler / Yoklama',
     analysisTab: 'Analiz',
+
+    // Üye Yönetimi
     addMemberTitle: 'Yeni Kullanıcı Oluştur',
     addMemberBtn: 'Kullanıcıyı Kaydet',
     nameInput: 'Ad Soyad',
@@ -30,32 +33,53 @@ export const translations = {
     female: 'Kadın',
     age: 'Yaş',
     allowNotifications: 'Bildirim almak istiyorum',
-    classesTitle: 'Ders Kontenjanları ve Yoklama',
-    capacity: 'Kontenjan',
-    waitlist: 'Yedek Liste',
-    dropMemberBtn: 'Dersten Çıkar',
-    markPresent: 'Geldi',
-    markAbsent: 'Gelmedi',
-    calendarTitle: 'Haftalık Ders Takvimi',
-    joinClass: 'Katıl (1 Jeton)',
-    joinWaitlist: 'Yedeğe Katıl (1 Jeton)',
-    cancelClass: 'İptal Et (İade)',
-    suspendedMsg: 'Hesabınız askıya alınmıştır.',
-    ruleErrorMsg: 'Derse 2 saatten az kaldığı için iptal edilemez!',
-    logout: 'Çıkış Yap',
-    densityTitle: 'Veri Analizi: Yoğunluk Tahmini',
-    densityDesc: 'Geçmiş verilere göre saatlik yoğunluk analizi.',
+    memberList: 'Üye Listesi',
+    activeStatus: 'AKTİF',
+    suspendedStatus: 'ASKIYA ALINDI',
+    penaltyLabel: 'Ceza',
+
+    // Jeton ve Paket Sistemi
     package: 'Üyelik Paketi',
     pack8: '8 Derslik Paket',
     pack16: '16 Derslik Paket',
     pack24: '24 Derslik Paket',
-    creditsLeft: 'Kalan Jeton',
-    noCreditsMsg: 'Jetonunuz bitmiştir. Lütfen paket yenileyin.'
+    credits: 'Jeton',
+    noCreditsMsg: 'Jetonunuz bitmiştir. Lütfen paket yenileyin.',
+
+    // Ders Yönetimi
+    addClassTitle: 'Yeni Ders Ekle',
+    className: 'Ders Adı',
+    classTime: 'Ders Saati',
+    capacity: 'Kontenjan',
+    createClassBtn: 'Dersi Oluştur',
+    classesTitle: 'Ders Kontenjanları ve Yoklama',
+    waitlist: 'Yedek Liste',
+    markPresent: 'Geldi',
+    markAbsent: 'Gelmedi',
+    dropMember: 'Çıkar',
+    deleteClassConfirm: 'Bu dersi silmek istediğinize emin misiniz? Kayıtlı üyelere jetonları iade edilecektir.',
+    deleteMemberConfirm: 'Bu üyeyi silmek istediğinize emin misiniz? Tüm ders kayıtları temizlenecektir.',
+
+    // Üye Paneli
+    calendarTitle: 'Haftalık Ders Takvimi',
+    joinClass: 'Katıl',
+    joinWaitlist: 'Yedeğe Katıl',
+    cancelClass: 'İptal Et',
+    suspendedMsg: 'Hesabınız askıya alınmıştır.',
+    notifications: 'Bildirimler',
+    noNotifications: 'Bildiriminiz yok.',
+
+    // Analiz
+    densityTitle: 'Veri Analizi: Yoğunluk Tahmini',
+    densityDesc: 'Geçmiş verilere göre saatlik yoğunluk analizi.',
+    totalMembers: 'Toplam Üye',
+    activeClasses: 'Aktif Ders'
   },
   en: {
+    // Login & Welcome
     gymflowDesc: 'Modern Gym Management',
     owner: 'Manager',
-    ownerDesc: 'Manage gym, track members and view stats.',
+    ownerDesc: 'Manage your gym, track members and view stats.',
     member: 'Member',
     memberDesc: 'View calendar, book classes and check status.',
     ownerLogin: 'Manager Login',
@@ -65,15 +89,17 @@ export const translations = {
     email: 'Email',
     password: 'Password',
     loginBtn: 'Login',
-    goBack: '← Go Back',
-    selectAccount: 'Select Your Account',
-    selectMember: 'Select a Member...',
-    goToPanel: 'Go to Dashboard',
+    goBack: 'Go Back',
+    logout: 'Logout',
     welcomeOwner: 'Welcome, Manager',
+
+    // Dashboard Tabs
     dashboard: 'Dashboard',
     members: 'Members',
     classesTab: 'Classes / Attendance',
     analysisTab: 'Analysis',
+
+    // Member Management
     addMemberTitle: 'Create New User',
     addMemberBtn: 'Save User',
     nameInput: 'Full Name',
@@ -83,26 +109,46 @@ export const translations = {
     female: 'Female',
     age: 'Age',
     allowNotifications: 'I want to receive notifications',
-    classesTitle: 'Class Capacity & Attendance',
-    capacity: 'Capacity',
-    waitlist: 'Waitlist',
-    dropMemberBtn: 'Drop Member',
-    markPresent: 'Present',
-    markAbsent: 'Absent',
-    calendarTitle: 'Weekly Class Calendar',
-    joinClass: 'Join (1 Credit)',
-    joinWaitlist: 'Join Waitlist (1 Credit)',
-    cancelClass: 'Cancel (Refund)',
-    suspendedMsg: 'Your account is suspended.',
-    ruleErrorMsg: 'Cannot cancel within 2 hours of class!',
-    logout: 'Logout',
-    densityTitle: 'Data Analysis: Density Prediction',
-    densityDesc: 'Hourly density analysis based on history.',
+    memberList: 'Member List',
+    activeStatus: 'ACTIVE',
+    suspendedStatus: 'SUSPENDED',
+    penaltyLabel: 'Penalty',
+
+    // Credits & Package System
     package: 'Membership Package',
     pack8: '8 Classes Pack',
     pack16: '16 Classes Pack',
     pack24: '24 Classes Pack',
-    creditsLeft: 'Credits Left',
-    noCreditsMsg: 'Out of credits. Please renew your package.'
+    credits: 'Credits',
+    noCreditsMsg: 'Out of credits. Please renew your package.',
+
+    // Class Management
+    addClassTitle: 'Add New Class',
+    className: 'Class Name',
+    classTime: 'Class Time',
+    capacity: 'Capacity',
+    createClassBtn: 'Create Class',
+    classesTitle: 'Class Capacity & Attendance',
+    waitlist: 'Waitlist',
+    markPresent: 'Present',
+    markAbsent: 'Absent',
+    dropMember: 'Drop',
+    deleteClassConfirm: 'Are you sure you want to delete this class? Credits will be refunded to enrolled members.',
+    deleteMemberConfirm: 'Are you sure you want to delete this member? All class records will be cleared.',
+
+    // Member Panel
+    calendarTitle: 'Weekly Class Schedule',
+    joinClass: 'Join',
+    joinWaitlist: 'Join Waitlist',
+    cancelClass: 'Cancel',
+    suspendedMsg: 'Your account is suspended.',
+    notifications: 'Notifications',
+    noNotifications: 'No notifications.',
+
+    // Analysis
+    densityTitle: 'Data Analysis: Density Prediction',
+    densityDesc: 'Hourly density analysis based on history.',
+    totalMembers: 'Total Members',
+    activeClasses: 'Active Classes'
   }
 };
