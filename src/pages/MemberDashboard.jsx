@@ -8,23 +8,24 @@ export default function MemberDashboard({ memberId, onLogout, t }) {
   const [notifications, setNotifications] = useState([]);
   const [classes, setClasses] = useState([]);
 
+  const loadData = async () => {
+    const { data: memberData } = await supabase.from('members').select('*').eq('id', memberId).single();
+    if (memberData) setMember(memberData);
+
+    const { data: notifData } = await supabase.from('notifications').select('*').eq('memberId', memberId);
+    if (notifData) setNotifications(notifData);
+
+    const { data: clsData } = await supabase.from('classes').select('*');
+    if (clsData) setClasses(clsData);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: memberData } = await supabase.from('members').select('*').eq('id', memberId).single();
-      if (memberData) setMember(memberData);
-
-      const { data: notifData } = await supabase.from('notifications').select('*').eq('memberId', memberId);
-      if (notifData) setNotifications(notifData);
-
-      const { data: clsData } = await supabase.from('classes').select('*');
-      if (clsData) setClasses(clsData);
-    };
-    fetchData();
+    loadData();
 
     const sub = supabase.channel('member-dashboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, loadData)
       .subscribe();
 
     return () => { supabase.removeChannel(sub); };
@@ -32,12 +33,20 @@ export default function MemberDashboard({ memberId, onLogout, t }) {
 
   const handleEnroll = async (classId) => {
     const res = await enrollInClass(classId, memberId, member?.status === 'suspended');
-    if(!res.success) alert(res.message);
+    if(!res.success) {
+      alert(res.message);
+    } else {
+      await loadData(); // EKRANI ANINDA YENİLE
+    }
   };
 
   const handleCancel = async (classId, classTime) => {
     const res = await cancelClassByMember(classId, memberId, classTime);
-    if(!res.success) alert(res.message);
+    if(!res.success) {
+      alert(res.message);
+    } else {
+      await loadData(); // EKRANI ANINDA YENİLE
+    }
   };
 
   return (
