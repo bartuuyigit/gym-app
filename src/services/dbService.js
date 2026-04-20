@@ -1,5 +1,71 @@
 import { supabase } from '../config/supabase';
 
+// 1. ÜYE DERSE KATILMA (ÇİFTE KAYIT VE JETON KONTROLÜ DAHİL)
+export const enrollInClass = async (classId, memberId, isSuspended) => {
+  if (isSuspended) return { success: false, message: "Suspended!" };
+  try {
+    const { data: member } = await supabase.from('members').select('credits').eq('id', memberId).single();
+    if (!member || (member.credits || 0) <= 0) {
+      return { success: false, message: "Insufficient credits!" };
+    }
+    
+    const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
+    let enrolled = cls.enrolled || [];
+    let waitlist = cls.waitlist || [];
+
+    // KESİN ÇÖZÜM 1: Tip uyuşmazlığını (Sayı/Metin) önlemek için ID'leri stringe çevirip kontrol ediyoruz
+    const strMemberId = String(memberId);
+    const isEnrolled = enrolled.some(id => String(id) === strMemberId);
+    const isWaitlisted = waitlist.some(id => String(id) === strMemberId);
+
+    if (isEnrolled || isWaitlisted) return { success: false };
+
+    // KESİN ÇÖZÜM 2: Array'e eklerken Set kullanarak "benzersizlik" garantisi veriyoruz
+    if (enrolled.length < cls.capacity) {
+      enrolled.push(memberId);
+      enrolled = [...new Set(enrolled.map(String))]; // Aynı ID iki kere varsa teke düşürür
+      await supabase.from('classes').update({ enrolled }).eq('id', classId);
+    } else {
+      waitlist.push(memberId);
+      waitlist = [...new Set(waitlist.map(String))];
+      await supabase.from('classes').update({ waitlist }).eq('id', classId);
+    }
+    
+    await supabase.from('members').update({ credits: member.credits - 1 }).eq('id', memberId);
+    return { success: true };
+  } catch (error) { return { success: false, message: error.message }; }
+};
+
+// 2. ÜYE İPTAL VE JETON İADESİ
+export const dropMemberAndTriggerWaitlist = async (classId, memberIdToDrop) => {
+  try {
+    const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
+    let enrolled = cls.enrolled || [];
+    let waitlist = cls.waitlist || [];
+    
+    const strMemberIdToDrop = String(memberIdToDrop);
+    const wasEnrolled = enrolled.some(id => String(id) === strMemberIdToDrop);
+    
+    enrolled = enrolled.filter(id => String(id) !== strMemberIdToDrop);
+    waitlist = waitlist.filter(id => String(id) !== strMemberIdToDrop);
+    
+    if (wasEnrolled && waitlist.length > 0) {
+      enrolled.push(waitlist.shift());
+      enrolled = [...new Set(enrolled.map(String))];
+    }
+    
+    await supabase.from('classes').update({ enrolled, waitlist }).eq('id', classId);
+    const { data: m } = await supabase.from('members').select('credits').eq('id', memberIdToDrop).single();
+    await supabase.from('members').update({ credits: (m.credits || 0) + 1 }).eq('id', memberIdToDrop);
+    return { success: true };
+  } catch (err) { return { success: false }; }
+};
+
+export const cancelClassByMember = async (classId, memberId) => {
+  return await dropMemberAndTriggerWaitlist(classId, memberId);
+};
+
+// DİĞER FONKSİYONLAR
 export const addMemberToDB = async (m) => {
   const credits = m.package === 'pack24' ? 24 : m.package === 'pack16' ? 16 : 8;
   const { data, error } = await supabase.from('members').insert([{
@@ -7,44 +73,6 @@ export const addMemberToDB = async (m) => {
   }]).select();
   if (error) throw error;
   return data[0].id;
-};
-
-export const enrollInClass = async (classId, memberId, isSuspended) => {
-  if (isSuspended) return { success: false, message: "Suspended!" };
-  const { data: member } = await supabase.from('members').select('credits').eq('id', memberId).single();
-  if (!member || (member.credits || 0) <= 0) return { success: false, message: "Insufficient credits!" };
-
-  const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
-  let enrolled = cls.enrolled || [];
-  let waitlist = cls.waitlist || [];
-
-  if (enrolled.length < cls.capacity) {
-    enrolled.push(memberId);
-    await supabase.from('classes').update({ enrolled }).eq('id', classId);
-  } else {
-    waitlist.push(memberId);
-    await supabase.from('classes').update({ waitlist }).eq('id', classId);
-  }
-  await supabase.from('members').update({ credits: member.credits - 1 }).eq('id', memberId);
-  return { success: true };
-};
-
-export const dropMemberAndTriggerWaitlist = async (classId, memberIdToDrop) => {
-  const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
-  let enrolled = (cls.enrolled || []).filter(id => id !== memberIdToDrop);
-  let waitlist = (cls.waitlist || []).filter(id => id !== memberIdToDrop);
-  
-  if (cls.enrolled.includes(memberIdToDrop) && waitlist.length > 0) {
-    enrolled.push(waitlist.shift());
-  }
-  await supabase.from('classes').update({ enrolled, waitlist }).eq('id', classId);
-  const { data: m } = await supabase.from('members').select('credits').eq('id', memberIdToDrop).single();
-  await supabase.from('members').update({ credits: (m.credits || 0) + 1 }).eq('id', memberIdToDrop);
-  return { success: true };
-};
-
-export const cancelClassByMember = async (classId, memberId) => {
-  return await dropMemberAndTriggerWaitlist(classId, memberId);
 };
 
 export const deleteClassAndRefund = async (id) => {
@@ -61,8 +89,8 @@ export const deleteClassAndRefund = async (id) => {
 export const deleteMemberFromDB = async (id) => {
   const { data: classes } = await supabase.from('classes').select('*');
   for (const cls of classes) {
-    const enrolled = (cls.enrolled || []).filter(mId => mId !== id);
-    const waitlist = (cls.waitlist || []).filter(mId => mId !== id);
+    const enrolled = (cls.enrolled || []).filter(mId => String(mId) !== String(id));
+    const waitlist = (cls.waitlist || []).filter(mId => String(mId) !== String(id));
     await supabase.from('classes').update({ enrolled, waitlist }).eq('id', cls.id);
   }
   await supabase.from('notifications').delete().eq('memberId', id);
