@@ -45,13 +45,23 @@ export const translations = {
     noNotifications: 'Bildiriminiz yok.',
     totalMembers: 'Toplam Üye',
     activeClasses: 'Aktif Ders',
+    status: 'Durum',
     suspendedStatus: 'ASKIYA ALINDI',
     activeStatus: 'AKTİF',
+    unsuspendBtn: 'Cezayı Kaldır',
     deleteClassConfirm: 'Dersi silmek istediğinize emin misiniz?',
     deleteMemberConfirm: 'Üyeyi silmek istediğinize emin misiniz?',
     profile: 'Profilim',
     registerDate: 'Kayıt Tarihi',
-    cancelError: 'Derse çok az kaldığı için iptal edilemez!'
+    cancelError: 'Derse çok az kaldığı için iptal edilemez!',
+    featuresTitle: 'Sistemde Neler Yapabilirsiniz?',
+    featOwnerTitle: 'Yöneticiler İçin Tam Kontrol',
+    featOwnerDesc: 'Üyelerinizi sisteme kaydedin, haftalık ders takvimini oluşturun, jetonları yönetin ve salonunuzun doluluk analizlerini tek ekranda görün. Karmaşık kağıt kürek işlerine son verin.',
+    featMemberTitle: 'Üyeler İçin Kolay Kullanım',
+    featMemberDesc: 'Size atanan jetonlarla saniyeler içinde derslere katılın, kontenjan doluyken yedek sırasına girin. Biri iptal ettiğinde otomatik olarak derse dahil olun.',
+    helpTitle: 'Nasıl Çalışır?',
+    helpDesc: 'GymFlow, modern spor salonları için tasarlanmış akıllı bir jeton sistemidir. Yönetici paneli ile salonunuzu dijitalleştirirken, üye paneli ile Whatsapp gruplarındaki randevu karmaşasını bitirirsiniz. Başlamak için sayfanın üstünden rolünüzü seçerek giriş yapın.',
+    close: 'Kapat'
   },
   en: {
     gymflowDesc: 'Modern Gym Management',
@@ -99,12 +109,22 @@ export const translations = {
     noNotifications: 'No notifications.',
     totalMembers: 'Total Members',
     activeClasses: 'Active Classes',
+    status: 'Status',
     suspendedStatus: 'SUSPENDED',
     activeStatus: 'ACTIVE',
+    unsuspendBtn: 'Remove Penalty',
     deleteClassConfirm: 'Are you sure you want to delete this class?',
     deleteMemberConfirm: 'Are you sure you want to delete this member?',
     profile: 'My Profile',
     registerDate: 'Join Date',
-    cancelError: 'Cannot cancel too close to class time!'
+    cancelError: 'Cannot cancel too close to class time!',
+    featuresTitle: 'What Can You Do?',
+    featOwnerTitle: 'Full Control for Managers',
+    featOwnerDesc: 'Register members, create weekly class schedules, manage credits, and view gym occupancy analytics on one screen. End the complex paperwork.',
+    featMemberTitle: 'Easy to Use for Members',
+    featMemberDesc: 'Join classes in seconds with your assigned credits, join the waitlist when full. Automatically get enrolled if someone cancels.',
+    helpTitle: 'How it Works?',
+    helpDesc: 'GymFlow is a smart credit-based system designed for modern gyms. Digitize your gym with the manager panel and end the booking chaos. Select your role above to login and get started.',
+    close: 'Close'
   }
 };
