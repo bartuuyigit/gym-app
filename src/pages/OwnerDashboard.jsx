@@ -8,7 +8,8 @@ import {
   addClassToDB, 
   updateMemberCredits, 
   deleteClassAndRefund, 
-  deleteMemberFromDB 
+  deleteMemberFromDB,
+  liftSuspension // YENİ FONKSİYON İÇERİ AKTARILDI
 } from '../services/dbService';
 
 export default function OwnerDashboard({ onLogout, t }) {
@@ -78,7 +79,12 @@ export default function OwnerDashboard({ onLogout, t }) {
     await loadData();
   };
 
-  // ANALİZ VERİLERİ (Gerçek zamanlı hesaplama)
+  // YENİ: CEZA KALDIRMA TETİKLEYİCİSİ
+  const handleLiftSuspension = async (mId) => {
+    const res = await liftSuspension(mId);
+    if (res.success) loadData();
+  };
+
   const totalCapacity = classes.reduce((acc, curr) => acc + (curr.capacity || 0), 0);
   const totalEnrolled = classes.reduce((acc, curr) => acc + (curr.enrolled?.length || 0), 0);
   const occupancyRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
@@ -110,7 +116,6 @@ export default function OwnerDashboard({ onLogout, t }) {
 
         <div className="p-4 md:p-8 pt-0">
           
-          {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white p-10 rounded-[2.5rem] border border-[#d2d3ce] text-center shadow-sm">
@@ -124,7 +129,6 @@ export default function OwnerDashboard({ onLogout, t }) {
             </div>
           )}
 
-          {/* MEMBERS TAB (Gelişmiş Profil Görünümü) */}
           {activeTab === 'members' && (
             <div className="space-y-6">
               <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-[#d2d3ce] shadow-sm">
@@ -160,11 +164,28 @@ export default function OwnerDashboard({ onLogout, t }) {
                         <button onClick={() => handleDeleteMember(m.id)} className="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-xl transition-colors"><Icons.Trash /></button>
                       </div>
                       
-                      <div className="bg-[#f8f9f7] p-4 rounded-2xl mb-4 text-sm font-bold text-[#061414] grid grid-cols-2 gap-2 border border-[#d2d3ce]">
+                      {/* ÜYE BİLGİLERİ VE CEZA KALDIRMA BUTONU */}
+                      <div className="bg-[#f8f9f7] p-4 rounded-2xl mb-4 text-sm font-bold text-[#061414] grid grid-cols-2 gap-y-4 gap-x-2 border border-[#d2d3ce]">
                         <div><span className="text-[#96998c] block text-xs">{t.registerDate}</span> {m.startDate || '-'}</div>
                         <div><span className="text-[#96998c] block text-xs">{t.package}</span> {m.membershipType === 'pack24' ? '24' : m.membershipType === 'pack16' ? '16' : '8'}</div>
                         <div><span className="text-[#96998c] block text-xs">{t.gender}</span> {m.gender === 'female' ? t.female : t.male}</div>
-                        <div><span className="text-[#96998c] block text-xs">Durum</span> {m.status === 'suspended' ? <span className="text-red-500">{t.suspendedStatus}</span> : <span className="text-green-600">{t.activeStatus}</span>}</div>
+                        
+                        <div>
+                          <span className="text-[#96998c] block text-xs">{t.status}</span> 
+                          {m.status === 'suspended' ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-red-500">{t.suspendedStatus}</span>
+                              <button 
+                                onClick={() => handleLiftSuspension(m.id)} 
+                                className="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-black uppercase hover:bg-red-200 transition-colors border border-red-200"
+                              >
+                                {t.unsuspendBtn}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-green-600 mt-1 inline-block">{t.activeStatus}</span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -181,7 +202,6 @@ export default function OwnerDashboard({ onLogout, t }) {
             </div>
           )}
 
-          {/* CLASSES TAB */}
           {activeTab === 'classes' && (
             <div className="space-y-6">
               <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-[#d2d3ce] shadow-sm">
@@ -206,7 +226,6 @@ export default function OwnerDashboard({ onLogout, t }) {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       {(cls.enrolled || []).map(mId => {
-                        // BURASI DÜZELTİLDİ: ID'ler artık string olarak tam eşleşiyor
                         const m = members.find(x => String(x.id) === String(mId)); 
                         const displayName = m ? m.name : 'Silinmiş Üye';
                         
@@ -238,7 +257,6 @@ export default function OwnerDashboard({ onLogout, t }) {
             </div>
           )}
 
-          {/* ANALYSIS TAB (YENİ VE DİNAMİK) */}
           {activeTab === 'analysis' && (
              <div className="space-y-6">
                 <div className="bg-white p-8 md:p-10 rounded-[2.5rem] border border-[#d2d3ce] shadow-sm">
