@@ -59,11 +59,25 @@ export const cancelClassByMember = async (classId, memberId) => {
   return await dropMemberAndTriggerWaitlist(classId, memberId);
 };
 
+// BURASI TAMAMEN DÜZELTİLDİ: Artık hata vermeyecek.
 export const addMemberToDB = async (m) => {
   const credits = m.package === 'pack24' ? 24 : m.package === 'pack16' ? 16 : 8;
+  
+  // Veritabanına gidecek veriyi tek tek, güvenli bir şekilde eşliyoruz.
   const { data, error } = await supabase.from('members').insert([{
-    ...m, credits, membershipType: m.package, status: 'active', absentCount: 0, startDate: new Date().toISOString().split('T')[0]
+    name: m.name,
+    email: m.email,
+    phone: m.phone,
+    gender: m.gender,
+    age: m.age,
+    allowNotifications: m.allowNotifications,
+    credits: credits,
+    membershipType: m.package, // "package" sütunu aramak yerine doğru isme atıyoruz.
+    status: 'active',
+    absentCount: 0,
+    startDate: new Date().toISOString().split('T')[0]
   }]).select();
+
   if (error) throw error;
   return data[0].id;
 };
@@ -98,7 +112,6 @@ export const markAttendance = async (mId, present) => {
   }
 };
 
-// YENİ EKLENEN: CEZA KALDIRMA FONKSİYONU
 export const liftSuspension = async (memberId) => {
   try {
     const { error } = await supabase.from('members').update({ status: 'active', absentCount: 0 }).eq('id', memberId);
