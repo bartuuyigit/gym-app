@@ -1,29 +1,24 @@
 import { supabase } from '../config/supabase';
 
-// 1. ÜYE DERSE KATILMA (ÇİFTE KAYIT VE JETON KONTROLÜ DAHİL)
 export const enrollInClass = async (classId, memberId, isSuspended) => {
   if (isSuspended) return { success: false, message: "Suspended!" };
   try {
     const { data: member } = await supabase.from('members').select('credits').eq('id', memberId).single();
-    if (!member || (member.credits || 0) <= 0) {
-      return { success: false, message: "Insufficient credits!" };
-    }
+    if (!member || (member.credits || 0) <= 0) return { success: false, message: "Insufficient credits!" };
     
     const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
     let enrolled = cls.enrolled || [];
     let waitlist = cls.waitlist || [];
 
-    // KESİN ÇÖZÜM 1: Tip uyuşmazlığını (Sayı/Metin) önlemek için ID'leri stringe çevirip kontrol ediyoruz
     const strMemberId = String(memberId);
     const isEnrolled = enrolled.some(id => String(id) === strMemberId);
     const isWaitlisted = waitlist.some(id => String(id) === strMemberId);
 
     if (isEnrolled || isWaitlisted) return { success: false };
 
-    // KESİN ÇÖZÜM 2: Array'e eklerken Set kullanarak "benzersizlik" garantisi veriyoruz
     if (enrolled.length < cls.capacity) {
       enrolled.push(memberId);
-      enrolled = [...new Set(enrolled.map(String))]; // Aynı ID iki kere varsa teke düşürür
+      enrolled = [...new Set(enrolled.map(String))];
       await supabase.from('classes').update({ enrolled }).eq('id', classId);
     } else {
       waitlist.push(memberId);
@@ -36,7 +31,6 @@ export const enrollInClass = async (classId, memberId, isSuspended) => {
   } catch (error) { return { success: false, message: error.message }; }
 };
 
-// 2. ÜYE İPTAL VE JETON İADESİ
 export const dropMemberAndTriggerWaitlist = async (classId, memberIdToDrop) => {
   try {
     const { data: cls } = await supabase.from('classes').select('*').eq('id', classId).single();
@@ -65,7 +59,6 @@ export const cancelClassByMember = async (classId, memberId) => {
   return await dropMemberAndTriggerWaitlist(classId, memberId);
 };
 
-// DİĞER FONKSİYONLAR
 export const addMemberToDB = async (m) => {
   const credits = m.package === 'pack24' ? 24 : m.package === 'pack16' ? 16 : 8;
   const { data, error } = await supabase.from('members').insert([{
@@ -102,6 +95,17 @@ export const markAttendance = async (mId, present) => {
     const { data: m } = await supabase.from('members').select('absentCount').eq('id', mId).single();
     const count = (m.absentCount || 0) + 1;
     await supabase.from('members').update({ absentCount: count, status: count >= 3 ? 'suspended' : 'active' }).eq('id', mId);
+  }
+};
+
+// YENİ EKLENEN: CEZA KALDIRMA FONKSİYONU
+export const liftSuspension = async (memberId) => {
+  try {
+    const { error } = await supabase.from('members').update({ status: 'active', absentCount: 0 }).eq('id', memberId);
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    return { success: false };
   }
 };
 
