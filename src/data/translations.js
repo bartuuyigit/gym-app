@@ -6,7 +6,9 @@ export const translations = {
     member: 'Üye',
     memberDesc: 'Takvimi gör, randevu al ve durumunu kontrol et.',
     ownerLogin: 'Yönetici Girişi',
+    ownerLoginDesc: 'Sisteme erişmek için bilgilerinizi girin',
     memberLogin: 'Üye Girişi',
+    memberLoginDesc: 'E-posta veya telefon numaranızla giriş yapın.',
     email: 'E-posta',
     password: 'Şifre',
     loginBtn: 'Giriş Yap',
@@ -25,6 +27,11 @@ export const translations = {
     male: 'Erkek',
     female: 'Kadın',
     age: 'Yaş',
+    allowNotifications: 'Bildirim almak istiyorum',
+    package: 'Paket',
+    pack8: '8 Ders',
+    pack16: '16 Ders',
+    pack24: '24 Ders',
     credits: 'Jeton',
     noCreditsMsg: 'Yetersiz jeton! Lütfen paket yenileyin.',
     calendarTitle: 'Haftalık Ders Takvimi',
@@ -35,7 +42,11 @@ export const translations = {
     waitlist: 'Yedek Liste',
     notifications: 'Bildirimler',
     totalMembers: 'Toplam Üye',
-    activeClasses: 'Aktif Ders'
+    activeClasses: 'Aktif Ders',
+    suspendedStatus: 'ASKIYA ALINDI',
+    activeStatus: 'AKTİF',
+    deleteClassConfirm: 'Dersi silmek istediğinize emin misiniz?',
+    deleteMemberConfirm: 'Üyeyi silmek istediğinize emin misiniz?'
   },
   en: {
     gymflowDesc: 'Modern Gym Management',
@@ -44,7 +55,9 @@ export const translations = {
     member: 'Member',
     memberDesc: 'View calendar, book classes, and check status.',
     ownerLogin: 'Manager Login',
+    ownerLoginDesc: 'Enter your credentials to access',
     memberLogin: 'Member Login',
+    memberLoginDesc: 'Login with your email or phone number.',
     email: 'Email',
     password: 'Password',
     loginBtn: 'Login',
@@ -63,6 +76,11 @@ export const translations = {
     male: 'Male',
     female: 'Female',
     age: 'Age',
+    allowNotifications: 'I want to receive notifications',
+    package: 'Package',
+    pack8: '8 Classes',
+    pack16: '16 Classes',
+    pack24: '24 Classes',
     credits: 'Credits',
     noCreditsMsg: 'Insufficient credits! Please renew package.',
     calendarTitle: 'Weekly Class Schedule',
@@ -73,6 +91,10 @@ export const translations = {
     waitlist: 'Waitlist',
     notifications: 'Notifications',
     totalMembers: 'Total Members',
-    activeClasses: 'Active Classes'
+    activeClasses: 'Active Classes',
+    suspendedStatus: 'SUSPENDED',
+    activeStatus: 'ACTIVE',
+    deleteClassConfirm: 'Are you sure you want to delete this class?',
+    deleteMemberConfirm: 'Are you sure you want to delete this member?'
   }
 };
