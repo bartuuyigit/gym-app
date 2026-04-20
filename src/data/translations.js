@@ -48,7 +48,10 @@ export const translations = {
     suspendedStatus: 'ASKIYA ALINDI',
     activeStatus: 'AKTİF',
     deleteClassConfirm: 'Dersi silmek istediğinize emin misiniz?',
-    deleteMemberConfirm: 'Üyeyi silmek istediğinize emin misiniz?'
+    deleteMemberConfirm: 'Üyeyi silmek istediğinize emin misiniz?',
+    profile: 'Profilim',
+    registerDate: 'Kayıt Tarihi',
+    cancelError: 'Derse çok az kaldığı için iptal edilemez!'
   },
   en: {
     gymflowDesc: 'Modern Gym Management',
@@ -99,6 +102,9 @@ export const translations = {
     suspendedStatus: 'SUSPENDED',
     activeStatus: 'ACTIVE',
     deleteClassConfirm: 'Are you sure you want to delete this class?',
-    deleteMemberConfirm: 'Are you sure you want to delete this member?'
+    deleteMemberConfirm: 'Are you sure you want to delete this member?',
+    profile: 'My Profile',
+    registerDate: 'Join Date',
+    cancelError: 'Cannot cancel too close to class time!'
   }
 };
